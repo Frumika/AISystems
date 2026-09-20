@@ -1,0 +1,100 @@
+﻿using Lab1;
+
+var random = Random.Shared;
+
+Field field;
+CubeState start;
+(int X, int Y) target;
+List<MoveDirection> solution;
+
+while (true)
+{
+    field = Field.Create(rows: 6, columns: 8, wallsCount: 8, random);
+
+    var freeCells = Enumerable.Range(0, field.Rows * field.Columns)
+        .Select(i => (x: i % field.Columns, y: i / field.Columns))
+        .Where(c => field.IsWalkable(c.x, c.y))
+        .OrderBy(_ => random.Next())
+        .Take(2)
+        .ToArray();
+
+    if (freeCells.Length < 2) continue;
+
+    start = new CubeState(freeCells[0].x, freeCells[0].y, Cube.Initial);
+    target = freeCells[1];
+
+    var found = CubeSolver.Solve(field, start, target);
+    if (found is null) continue;
+
+    solution = found;
+    break;
+}
+
+Console.WriteLine("Начальное поле:");
+PrintBoard(field, start, target);
+
+Console.WriteLine($"Решение найдено за {solution.Count} ходов:\n");
+PrintSolution(start, solution);
+
+return;
+
+static void PrintBoard(Field field, CubeState start, (int X, int Y) target)
+{
+    for (int y = 0; y < field.Rows; y++)
+    {
+        for (int x = 0; x < field.Columns; x++)
+        {
+            char symbol = field[x, y].Type == CellType.Wall ? '#'
+                : x == start.X && y == start.Y ? 'С'
+                : x == target.X && y == target.Y ? 'Ф'
+                : '.';
+
+            Console.Write(symbol);
+            Console.Write(' ');
+        }
+
+        Console.WriteLine();
+    }
+
+    Console.WriteLine();
+}
+
+static void PrintSolution(CubeState start, IReadOnlyList<MoveDirection> moves)
+{
+    var state = start;
+    Console.WriteLine($"Старт:  позиция ({state.X}, {state.Y}), низ = {TranslateFace(state.Cube.Bottom)}");
+
+    for (int i = 0; i < moves.Count; i++)
+    {
+        state = state.Move(moves[i]);
+        Console.WriteLine(
+            $"Шаг {i + 1,2}: {TranslateDirection(moves[i]),-5} → позиция ({state.X}, {state.Y}), низ = {TranslateFace(state.Cube.Bottom)}"
+        );
+    }
+}
+
+static string TranslateFace(Face face)
+{
+    return face switch
+    {
+        Face.First => "Первая (красная)",
+        Face.Second => "Вторая",
+        Face.Third => "Третья",
+        Face.Fourth => "Четвёртая",
+        Face.Fifth => "Пятая",
+        Face.Sixth => "Шестая",
+        _ => throw new ArgumentOutOfRangeException(nameof(face), face, null)
+    };
+}
+
+static string TranslateDirection(MoveDirection direction)
+{
+    return direction switch
+    {
+        MoveDirection.Up => "Вверх",
+        MoveDirection.Down => "Вниз",
+        MoveDirection.Left => "Влево",
+        MoveDirection.Right => "Вправо",
+        _ => throw new ArgumentOutOfRangeException(nameof(direction), direction, null)
+    };
+}

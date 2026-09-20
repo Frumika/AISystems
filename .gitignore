@@ -1,0 +1,31 @@
+# Rider / IntelliJ
+.idea/
+*.sln.iml
+riderModule.iml
+/_ReSharper.Caches/
+
+# Build results
+bin/
+obj/
+out/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Logs
+*.log
+
+# Visual Studio Code (если будешь использовать)
+.vscode/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Dotnet tools
+*.dotCover
+*.dotTrace
+*.dotMemory
