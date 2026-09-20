@@ -9,7 +9,7 @@ List<MoveDirection> solution;
 
 while (true)
 {
-    field = Field.Create(rows: 6, columns: 8, wallsCount: 8, random);
+    field = Field.Create(6, 8, 8);
 
     var freeCells = Enumerable.Range(0, field.Rows * field.Columns)
         .Select(i => (x: i % field.Columns, y: i / field.Columns))

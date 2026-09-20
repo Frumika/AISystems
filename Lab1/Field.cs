@@ -21,9 +21,8 @@ public class Field
     public bool IsWalkable(int x, int y) =>
         InBounds(x, y) && Cells[y][x].Type == CellType.Free;
 
-    public static Field Create(int rows, int columns, int wallsCount, Random? random = null)
+    public static Field Create(int rows, int columns, int wallsCount)
     {
-        random ??= Random.Shared;
         var cells = new Cell[rows][];
         for (int y = 0; y < rows; y++)
         {
@@ -39,7 +38,7 @@ public class Field
 
         var freeCoords = Enumerable.Range(0, rows * columns)
             .Select(i => (x: i % columns, y: i / columns))
-            .OrderBy(_ => random.Next())
+            .OrderBy(_ => Random.Shared.Next())
             .Take(wallsCount);
 
         foreach (var (x, y) in freeCoords)
