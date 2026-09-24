@@ -5,7 +5,8 @@ var random = Random.Shared;
 Field field;
 CubeState start;
 (int X, int Y) target;
-SearchResult result;
+SearchResult result1;
+SearchResult result2;
 
 while (true)
 {
@@ -23,8 +24,10 @@ while (true)
     start = new CubeState(freeCells[0].x, freeCells[0].y, Cube.Initial);
     target = freeCells[1];
 
-    result = CubeSolver.Solve(field, start, target);
-    if (result.Path is null) continue;
+    result1 = CubeSolver.Solve(field, start, target);
+    result2 = CubeSolver.SolveBidirectional(field, start, target);
+    if (result1.Path is null) continue;
+    if (result2.Path is null) continue;
 
     break;
 }
@@ -32,16 +35,32 @@ while (true)
 Console.WriteLine("Начальное поле:");
 PrintBoard(field, start, target);
 
-Console.WriteLine($"Решение найдено за {result.Path.Count} ходов:\n");
-PrintSolution(start, result.Path);
+Console.WriteLine($"Решение 1 найдено за {result1.Path.Count} ходов:\n");
+PrintSolution(start, result1.Path);
 
 Console.WriteLine();
-Console.WriteLine("--- Статистика поиска ---");
-Console.WriteLine($"1. Количество итераций алгоритма: {result.Iterations}");
+Console.WriteLine("--- Статистика 1 поиска ---");
+Console.WriteLine($"1. Количество итераций алгоритма: {result1.Iterations}");
 Console.WriteLine($"2. Узлов в списке O:");
-Console.WriteLine($"   - Максимальное за время поиска: {result.MaxOpenCount}");
-Console.WriteLine($"   - На момент завершения: {result.FinalOpenCount}");
-Console.WriteLine($"3. Максимальное количество хранимых в памяти узлов (|O| + |C|): {result.MaxMemoryCount}\n");
+Console.WriteLine($"   - Максимальное за время поиска: {result1.MaxOpenCount}");
+Console.WriteLine($"   - На момент завершения: {result1.FinalOpenCount}");
+Console.WriteLine($"3. Максимальное количество хранимых в памяти узлов (|O| + |C|): {result1.MaxMemoryCount}\n");
+
+Console.WriteLine();
+Console.WriteLine("-----------------------------------------------");
+Console.WriteLine();
+
+Console.WriteLine($"Решение 2 найдено за {result2.Path.Count} ходов:\n");
+PrintSolution(start, result2.Path);
+
+Console.WriteLine();
+Console.WriteLine("--- Статистика 2 поиска ---");
+Console.WriteLine($"1. Количество итераций алгоритма: {result2.Iterations}");
+Console.WriteLine($"2. Узлов в списке O:");
+Console.WriteLine($"   - Максимальное за время поиска: {result2.MaxOpenCount}");
+Console.WriteLine($"   - На момент завершения: {result2.FinalOpenCount}");
+Console.WriteLine($"3. Максимальное количество хранимых в памяти узлов (|O| + |C|): {result2.MaxMemoryCount}\n");
+
 
 return;
 
