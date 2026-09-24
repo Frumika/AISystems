@@ -6,9 +6,9 @@ public readonly record struct CubeState(int X, int Y, Cube Cube)
     {
         var (dx, dy) = direction switch
         {
-            MoveDirection.Up    => (0, -1),
-            MoveDirection.Down  => (0, 1),
-            MoveDirection.Left  => (-1, 0),
+            MoveDirection.Up => (0, -1),
+            MoveDirection.Down => (0, 1),
+            MoveDirection.Left => (-1, 0),
             MoveDirection.Right => (1, 0),
             _ => throw new ArgumentOutOfRangeException(nameof(direction))
         };

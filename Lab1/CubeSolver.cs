@@ -1,8 +1,16 @@
 ﻿namespace Lab1;
 
+public record SearchResult(
+    List<MoveDirection>? Path,
+    int Iterations,
+    int MaxOpenCount,
+    int FinalOpenCount,
+    int MaxMemoryCount
+);
+
 public static class CubeSolver
 {
-    public static List<MoveDirection>? Solve(Field field, CubeState start, (int X, int Y) target)
+    public static SearchResult Solve(Field field, CubeState start, (int X, int Y) target)
     {
         var queue = new Queue<CubeState>();
         var visited = new HashSet<CubeState> { start };
@@ -10,12 +18,25 @@ public static class CubeSolver
 
         queue.Enqueue(start);
 
+        int iterations = 0;
+        int maxOpenCount = queue.Count;
+        int maxMemoryCount = visited.Count;
+
         while (queue.Count > 0)
         {
+            iterations++;
             var current = queue.Dequeue();
 
             if (current.X == target.X && current.Y == target.Y && current.Cube.Bottom == Face.First)
-                return ReconstructPath(cameFrom, start, current);
+            {
+                return new SearchResult(
+                    ReconstructPath(cameFrom, start, current),
+                    iterations,
+                    maxOpenCount,
+                    queue.Count,
+                    maxMemoryCount
+                );
+            }
 
             foreach (var direction in Enum.GetValues<MoveDirection>())
             {
@@ -25,10 +46,17 @@ public static class CubeSolver
 
                 cameFrom[next] = (current, direction);
                 queue.Enqueue(next);
+
+                // Обновляем пиковые значения
+                if (queue.Count > maxOpenCount)
+                    maxOpenCount = queue.Count;
+
+                if (visited.Count > maxMemoryCount)
+                    maxMemoryCount = visited.Count;
             }
         }
 
-        return null;
+        return new SearchResult(null, iterations, maxOpenCount, queue.Count, maxMemoryCount);
     }
 
     private static List<MoveDirection> ReconstructPath(
@@ -43,6 +71,7 @@ public static class CubeSolver
             path.Add(move);
             state = prev;
         }
+
         path.Reverse();
         return path;
     }

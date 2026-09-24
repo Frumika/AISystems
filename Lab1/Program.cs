@@ -5,7 +5,7 @@ var random = Random.Shared;
 Field field;
 CubeState start;
 (int X, int Y) target;
-List<MoveDirection> solution;
+SearchResult result;
 
 while (true)
 {
@@ -23,18 +23,25 @@ while (true)
     start = new CubeState(freeCells[0].x, freeCells[0].y, Cube.Initial);
     target = freeCells[1];
 
-    var found = CubeSolver.Solve(field, start, target);
-    if (found is null) continue;
+    result = CubeSolver.Solve(field, start, target);
+    if (result.Path is null) continue;
 
-    solution = found;
     break;
 }
 
 Console.WriteLine("Начальное поле:");
 PrintBoard(field, start, target);
 
-Console.WriteLine($"Решение найдено за {solution.Count} ходов:\n");
-PrintSolution(start, solution);
+Console.WriteLine($"Решение найдено за {result.Path.Count} ходов:\n");
+PrintSolution(start, result.Path);
+
+Console.WriteLine();
+Console.WriteLine("--- Статистика поиска ---");
+Console.WriteLine($"1. Количество итераций алгоритма: {result.Iterations}");
+Console.WriteLine($"2. Узлов в списке O:");
+Console.WriteLine($"   - Максимальное за время поиска: {result.MaxOpenCount}");
+Console.WriteLine($"   - На момент завершения: {result.FinalOpenCount}");
+Console.WriteLine($"3. Максимальное количество хранимых в памяти узлов (|O| + |C|): {result.MaxMemoryCount}\n");
 
 return;
 
