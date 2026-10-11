@@ -1,66 +1,10 @@
 ﻿namespace Lab1;
 
-public record SearchResult(
-    List<MoveDirection>? Path,
-    int Iterations,
-    int MaxOpenCount,
-    int FinalOpenCount,
-    int MaxMemoryCount
-);
-
-public static class CubeSolver
+public class CubeSolver2 : BaseSolver
 {
     private static readonly List<Cube> TargetCubeOrientations = GetAllCubeOrientations()
         .Where(c => c.Bottom == Face.First)
         .ToList();
-
-    public static SearchResult Solve(Field field, CubeState start, (int X, int Y) target)
-    {
-        var queue = new Queue<CubeState>();
-        var visited = new HashSet<CubeState> { start };
-        var cameFrom = new Dictionary<CubeState, (CubeState prev, MoveDirection move)>();
-
-        queue.Enqueue(start);
-
-        int iterations = 0;
-        int maxOpenCount = queue.Count;
-        int maxMemoryCount = visited.Count;
-
-        while (queue.Count > 0)
-        {
-            iterations++;
-            var current = queue.Dequeue();
-
-            if (current.X == target.X && current.Y == target.Y && current.Cube.Bottom == Face.First)
-            {
-                return new SearchResult(
-                    ReconstructPath(cameFrom, start, current),
-                    iterations,
-                    maxOpenCount,
-                    queue.Count,
-                    maxMemoryCount
-                );
-            }
-
-            foreach (var direction in Enum.GetValues<MoveDirection>())
-            {
-                var next = current.Move(direction);
-                if (!field.IsWalkable(next.X, next.Y)) continue;
-                if (!visited.Add(next)) continue;
-
-                cameFrom[next] = (current, direction);
-                queue.Enqueue(next);
-
-                if (queue.Count > maxOpenCount)
-                    maxOpenCount = queue.Count;
-
-                if (visited.Count > maxMemoryCount)
-                    maxMemoryCount = visited.Count;
-            }
-        }
-
-        return new SearchResult(null, iterations, maxOpenCount, queue.Count, maxMemoryCount);
-    }
 
     public static SearchResult SolveBidirectional(Field field, CubeState start, (int X, int Y) target)
     {
@@ -79,7 +23,7 @@ public static class CubeSolver
                 queueBackward.Enqueue(targetState);
         }
 
-        int iterations = 0;
+        int totalProcessedNodes = 0;
         int maxOpenCount = queueForward.Count + queueBackward.Count;
         int maxMemoryCount = distForward.Count + distBackward.Count;
 
@@ -92,27 +36,27 @@ public static class CubeSolver
 
         while (queueForward.Count > 0 && queueBackward.Count > 0)
         {
-            // Доказанно безопасная остановка: короче уже найденного результата
-            // найтись не может, если меньшая из глубин его уже достигла.
-            if (found && Math.Min(forwardDepth, backwardDepth) >= bestTotal)
-                break;
-
-            iterations++;
-
+            if (found) break;
+            
             List<(CubeState Node, int Total)> matches;
+            int processedInThisLayer = 0;
 
             if (forwardDepth <= backwardDepth)
             {
                 forwardDepth++;
+                processedInThisLayer = queueForward.Count;
                 matches = ExpandLayer(queueForward, distForward, distBackward, cameFromForward, field,
                     direction => direction, forwardDepth);
             }
             else
             {
                 backwardDepth++;
-                matches = ExpandLayer(queueBackward, distBackward, distForward, cameFromBackward, field,
-                    Opposite, backwardDepth);
+                processedInThisLayer = queueBackward.Count;
+                matches = ExpandLayer(queueBackward, distBackward, distForward, cameFromBackward, field, Opposite,
+                    backwardDepth);
             }
+            
+            totalProcessedNodes += processedInThisLayer;
 
             foreach (var (node, total) in matches)
             {
@@ -134,10 +78,10 @@ public static class CubeSolver
         int finalOpenCount = queueForward.Count + queueBackward.Count;
 
         if (!found)
-            return new SearchResult(null, iterations, maxOpenCount, finalOpenCount, maxMemoryCount);
+            return new SearchResult(null, totalProcessedNodes, maxOpenCount, finalOpenCount, maxMemoryCount);
 
         var path = ReconstructBidirectionalPath(cameFromForward, cameFromBackward, start, bestMeeting);
-        return new SearchResult(path, iterations, maxOpenCount, finalOpenCount, maxMemoryCount);
+        return new SearchResult(path, totalProcessedNodes, maxOpenCount, finalOpenCount, maxMemoryCount);
     }
 
     private static List<(CubeState Node, int Total)> ExpandLayer(
@@ -150,7 +94,7 @@ public static class CubeSolver
         int newDepth)
     {
         var matches = new List<(CubeState, int)>();
-        int layerSize = queue.Count; // фиксируем размер слоя ДО обработки
+        int layerSize = queue.Count;
 
         for (int i = 0; i < layerSize; i++)
         {
@@ -240,21 +184,4 @@ public static class CubeSolver
         MoveDirection.Right => MoveDirection.Left,
         _ => throw new ArgumentOutOfRangeException(nameof(direction))
     };
-
-    private static List<MoveDirection> ReconstructPath(
-        Dictionary<CubeState, (CubeState prev, MoveDirection move)> cameFrom,
-        CubeState start, CubeState goal)
-    {
-        var path = new List<MoveDirection>();
-        var state = goal;
-        while (state != start)
-        {
-            var (prev, move) = cameFrom[state];
-            path.Add(move);
-            state = prev;
-        }
-
-        path.Reverse();
-        return path;
-    }
 }

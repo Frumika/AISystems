@@ -5,8 +5,10 @@ var random = Random.Shared;
 Field field;
 CubeState start;
 (int X, int Y) target;
-SearchResult result1;
-SearchResult result2;
+SearchResult resultBfs;
+SearchResult resultBidirectional;
+SearchResult resultAStart1;
+SearchResult resultAStart2;
 
 while (true)
 {
@@ -24,42 +26,88 @@ while (true)
     start = new CubeState(freeCells[0].x, freeCells[0].y, Cube.Initial);
     target = freeCells[1];
 
-    result1 = CubeSolver.Solve(field, start, target);
-    result2 = CubeSolver.SolveBidirectional(field, start, target);
-    if (result1.Path is null) continue;
-    if (result2.Path is null) continue;
+    resultBfs = CubeSolver1.Solve(field, start, target);
+    resultBidirectional = CubeSolver2.SolveBidirectional(field, start, target);
+    resultAStart1 = CubeSolver3.SolveAStar(field, start, target, CubeSolver3.HeuristicManhattan);
+    resultAStart2 = CubeSolver3.SolveAStar(field, start, target, CubeSolver3.HeuristicAdvanced);
+
+    if (resultBfs.Path is null) continue;
+    if (resultBidirectional.Path is null) continue;
+    if (resultAStart1.Path is null) continue;
+    if (resultAStart2.Path is null) continue;
 
     break;
 }
 
+
+Console.WriteLine("==================== BFC ====================");
+
 Console.WriteLine("Начальное поле:");
 PrintBoard(field, start, target);
 
-Console.WriteLine($"Решение 1 найдено за {result1.Path.Count} ходов:\n");
-PrintSolution(start, result1.Path);
+Console.WriteLine($"Решение 1 найдено за {resultBfs.Path.Count} ходов:\n");
+PrintSolution(start, resultBfs.Path);
 
 Console.WriteLine();
-Console.WriteLine("--- Статистика 1 поиска ---");
-Console.WriteLine($"1. Количество итераций алгоритма: {result1.Iterations}");
+Console.WriteLine("--- Статистика поиска (BFC) ---");
+Console.WriteLine($"1. Количество итераций алгоритма: {resultBfs.Iterations}");
 Console.WriteLine($"2. Узлов в списке O:");
-Console.WriteLine($"   - Максимальное за время поиска: {result1.MaxOpenCount}");
-Console.WriteLine($"   - На момент завершения: {result1.FinalOpenCount}");
-Console.WriteLine($"3. Максимальное количество хранимых в памяти узлов (|O| + |C|): {result1.MaxMemoryCount}\n");
+Console.WriteLine($"   - Максимальное за время поиска: {resultBfs.MaxOpenCount}");
+Console.WriteLine($"   - На момент завершения: {resultBfs.FinalOpenCount}");
+Console.WriteLine($"3. Максимальное количество хранимых в памяти узлов (|O| + |C|): {resultBfs.MaxMemoryCount}\n");
 
 Console.WriteLine();
 Console.WriteLine("-----------------------------------------------");
 Console.WriteLine();
+Console.WriteLine("==================== Bidirectional ====================");
 
-Console.WriteLine($"Решение 2 найдено за {result2.Path.Count} ходов:\n");
-PrintSolution(start, result2.Path);
+Console.WriteLine($"Решение 2 найдено за {resultBidirectional.Path.Count} ходов:\n");
+PrintSolution(start, resultBidirectional.Path);
 
 Console.WriteLine();
-Console.WriteLine("--- Статистика 2 поиска ---");
-Console.WriteLine($"1. Количество итераций алгоритма: {result2.Iterations}");
+Console.WriteLine("--- Статистика поиска (Bidirectional) ---");
+Console.WriteLine($"1. Количество итераций алгоритма: {resultBidirectional.Iterations}");
 Console.WriteLine($"2. Узлов в списке O:");
-Console.WriteLine($"   - Максимальное за время поиска: {result2.MaxOpenCount}");
-Console.WriteLine($"   - На момент завершения: {result2.FinalOpenCount}");
-Console.WriteLine($"3. Максимальное количество хранимых в памяти узлов (|O| + |C|): {result2.MaxMemoryCount}\n");
+Console.WriteLine($"   - Максимальное за время поиска: {resultBidirectional.MaxOpenCount}");
+Console.WriteLine($"   - На момент завершения: {resultBidirectional.FinalOpenCount}");
+Console.WriteLine(
+    $"3. Максимальное количество хранимых в памяти узлов (|O| + |C|): {resultBidirectional.MaxMemoryCount}\n");
+
+Console.WriteLine();
+Console.WriteLine("-----------------------------------------------");
+Console.WriteLine();
+Console.WriteLine("==================== AStar 1 ====================");
+
+Console.WriteLine($"Решение 3.1 найдено за {resultAStart1.Path.Count} ходов:\n");
+PrintSolution(start, resultAStart1.Path);
+
+Console.WriteLine();
+Console.WriteLine("--- Статистика поиска (AStar) ---");
+Console.WriteLine($"1. Количество итераций алгоритма: {resultAStart1.Iterations}");
+Console.WriteLine($"2. Узлов в списке O:");
+Console.WriteLine($"   - Максимальное за время поиска: {resultAStart1.MaxOpenCount}");
+Console.WriteLine($"   - На момент завершения: {resultAStart1.FinalOpenCount}");
+Console.WriteLine(
+    $"3. Максимальное количество хранимых в памяти узлов (|O| + |C|): {resultAStart1.MaxMemoryCount}\n");
+
+Console.WriteLine();
+Console.WriteLine("-----------------------------------------------");
+Console.WriteLine();
+Console.WriteLine("==================== AStar 2 ====================");
+
+Console.WriteLine($"Решение 3.2 найдено за {resultAStart2.Path.Count} ходов:\n");
+PrintSolution(start, resultAStart2.Path);
+
+Console.WriteLine();
+Console.WriteLine("--- Статистика поиска (AStar 2) ---");
+Console.WriteLine($"1. Количество итераций алгоритма: {resultAStart2.Iterations}");
+Console.WriteLine($"2. Узлов в списке O:");
+Console.WriteLine($"   - Максимальное за время поиска: {resultAStart2.MaxOpenCount}");
+Console.WriteLine($"   - На момент завершения: {resultAStart2.FinalOpenCount}");
+Console.WriteLine(
+    $"3. Максимальное количество хранимых в памяти узлов (|O| + |C|): {resultAStart2.MaxMemoryCount}\n");
+
+
 
 
 return;
