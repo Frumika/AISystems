@@ -3,15 +3,15 @@
 public class CubeSolver3 : BaseSolver
 {
     // h1(n)
-    public static int HeuristicManhattan(CubeState state, (int X, int Y) target)
+    public static int H1(CubeState state, (int X, int Y) target)
     {
         return Math.Abs(state.X - target.X) + Math.Abs(state.Y - target.Y);
     }
 
     // h2(n)
-    public static int HeuristicAdvanced(CubeState state, (int X, int Y) target)
+    public static int H2(CubeState state, (int X, int Y) target)
     {
-        int manhattan = Math.Abs(state.X - target.X) + Math.Abs(state.Y - target.Y);
+        int h1 = H1(state, target);
 
         int orientationCost = 0;
         if (state.Cube.Bottom != Face.First)
@@ -19,12 +19,12 @@ public class CubeSolver3 : BaseSolver
             orientationCost = state.Cube.Top == Face.First ? 2 : 1;
         }
 
-        if (manhattan == 0 && orientationCost > 0)
+        if (h1 == 0 && orientationCost > 0)
         {
             return 2;
         }
 
-        return Math.Max(manhattan, orientationCost);
+        return Math.Max(h1, orientationCost);
     }
 
     public static SearchResult SolveAStar(

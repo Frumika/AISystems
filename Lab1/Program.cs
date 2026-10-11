@@ -28,8 +28,8 @@ while (true)
 
     resultBfs = CubeSolver1.Solve(field, start, target);
     resultBidirectional = CubeSolver2.SolveBidirectional(field, start, target);
-    resultAStart1 = CubeSolver3.SolveAStar(field, start, target, CubeSolver3.HeuristicManhattan);
-    resultAStart2 = CubeSolver3.SolveAStar(field, start, target, CubeSolver3.HeuristicAdvanced);
+    resultAStart1 = CubeSolver3.SolveAStar(field, start, target, CubeSolver3.H1);
+    resultAStart2 = CubeSolver3.SolveAStar(field, start, target, CubeSolver3.H2);
 
     if (resultBfs.Path is null) continue;
     if (resultBidirectional.Path is null) continue;
