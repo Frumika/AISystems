@@ -10,7 +10,7 @@ SearchResult result2;
 
 while (true)
 {
-    field = Field.Create(6, 8, 8);
+    field = Field.Create(10, 12, 12);
 
     var freeCells = Enumerable.Range(0, field.Rows * field.Columns)
         .Select(i => (x: i % field.Columns, y: i / field.Columns))

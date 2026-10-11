@@ -13,7 +13,7 @@ public static class CubeSolver
     private static readonly List<Cube> TargetCubeOrientations = GetAllCubeOrientations()
         .Where(c => c.Bottom == Face.First)
         .ToList();
-    
+
     public static SearchResult Solve(Field field, CubeState start, (int X, int Y) target)
     {
         var queue = new Queue<CubeState>();
@@ -50,7 +50,7 @@ public static class CubeSolver
 
                 cameFrom[next] = (current, direction);
                 queue.Enqueue(next);
-                
+
                 if (queue.Count > maxOpenCount)
                     maxOpenCount = queue.Count;
 
@@ -64,93 +64,113 @@ public static class CubeSolver
 
     public static SearchResult SolveBidirectional(Field field, CubeState start, (int X, int Y) target)
     {
-        var queueForward = new Queue<CubeState>();
-        var visitedForward = new HashSet<CubeState> { start };
+        var distForward = new Dictionary<CubeState, int> { [start] = 0 };
         var cameFromForward = new Dictionary<CubeState, (CubeState prev, MoveDirection move)>();
+        var queueForward = new Queue<CubeState>();
         queueForward.Enqueue(start);
-        
-        var queueBackward = new Queue<CubeState>();
-        var visitedBackward = new HashSet<CubeState>();
+
+        var distBackward = new Dictionary<CubeState, int>();
         var cameFromBackward = new Dictionary<CubeState, (CubeState prev, MoveDirection move)>();
+        var queueBackward = new Queue<CubeState>();
 
         foreach (var targetState in GetTargetStates(target))
         {
-            queueBackward.Enqueue(targetState);
-            visitedBackward.Add(targetState);
+            if (distBackward.TryAdd(targetState, 0))
+                queueBackward.Enqueue(targetState);
         }
 
         int iterations = 0;
         int maxOpenCount = queueForward.Count + queueBackward.Count;
-        int maxMemoryCount = visitedForward.Count + visitedBackward.Count;
+        int maxMemoryCount = distForward.Count + distBackward.Count;
 
-        
+        int forwardDepth = 0;
+        int backwardDepth = 0;
+
+        bool found = false;
+        int bestTotal = 0;
+        CubeState bestMeeting = default;
+
         while (queueForward.Count > 0 && queueBackward.Count > 0)
         {
+            // Доказанно безопасная остановка: короче уже найденного результата
+            // найтись не может, если меньшая из глубин его уже достигла.
+            if (found && Math.Min(forwardDepth, backwardDepth) >= bestTotal)
+                break;
+
             iterations++;
-            
-            bool expandForward = queueForward.Count <= queueBackward.Count;
 
-            if (expandForward)
+            List<(CubeState Node, int Total)> matches;
+
+            if (forwardDepth <= backwardDepth)
             {
-                var current = queueForward.Dequeue();
-
-                foreach (var direction in Enum.GetValues<MoveDirection>())
-                {
-                    var next = current.Move(direction);
-                    if (!field.IsWalkable(next.X, next.Y)) continue;
-                    if (!visitedForward.Add(next)) continue;
-                    
-                    int currentMem = visitedForward.Count + visitedBackward.Count;
-                    if (currentMem > maxMemoryCount) maxMemoryCount = currentMem;
-
-                    cameFromForward[next] = (current, direction);
-                    
-                    if (visitedBackward.Contains(next))
-                    {
-                        int finalOpenCount = queueForward.Count + queueBackward.Count;
-                        var path = ReconstructBidirectionalPath(cameFromForward, cameFromBackward, start, next);
-                        return new SearchResult(path, iterations, maxOpenCount, finalOpenCount, maxMemoryCount);
-                    }
-
-                    queueForward.Enqueue(next);
-                    
-                    int currentOpen = queueForward.Count + queueBackward.Count;
-                    if (currentOpen > maxOpenCount) maxOpenCount = currentOpen;
-                }
+                forwardDepth++;
+                matches = ExpandLayer(queueForward, distForward, distBackward, cameFromForward, field,
+                    direction => direction, forwardDepth);
             }
             else
             {
-                var current = queueBackward.Dequeue();
+                backwardDepth++;
+                matches = ExpandLayer(queueBackward, distBackward, distForward, cameFromBackward, field,
+                    Opposite, backwardDepth);
+            }
 
-                foreach (var direction in Enum.GetValues<MoveDirection>())
+            foreach (var (node, total) in matches)
+            {
+                if (!found || total < bestTotal)
                 {
-                    var next = current.Move(direction);
-                    if (!field.IsWalkable(next.X, next.Y)) continue;
-                    if (!visitedBackward.Add(next)) continue;
-
-                    int currentMem = visitedForward.Count + visitedBackward.Count;
-                    if (currentMem > maxMemoryCount) maxMemoryCount = currentMem;
-                    
-                    var forwardMove = Opposite(direction);
-                    cameFromBackward[next] = (current, forwardMove);
-                    
-                    if (visitedForward.Contains(next))
-                    {
-                        int finalOpenCount = queueForward.Count + queueBackward.Count;
-                        var path = ReconstructBidirectionalPath(cameFromForward, cameFromBackward, start, next);
-                        return new SearchResult(path, iterations, maxOpenCount, finalOpenCount, maxMemoryCount);
-                    }
-
-                    queueBackward.Enqueue(next);
-
-                    int currentOpen = queueForward.Count + queueBackward.Count;
-                    if (currentOpen > maxOpenCount) maxOpenCount = currentOpen;
+                    found = true;
+                    bestTotal = total;
+                    bestMeeting = node;
                 }
+            }
+
+            int currentMem = distForward.Count + distBackward.Count;
+            if (currentMem > maxMemoryCount) maxMemoryCount = currentMem;
+
+            int currentOpen = queueForward.Count + queueBackward.Count;
+            if (currentOpen > maxOpenCount) maxOpenCount = currentOpen;
+        }
+
+        int finalOpenCount = queueForward.Count + queueBackward.Count;
+
+        if (!found)
+            return new SearchResult(null, iterations, maxOpenCount, finalOpenCount, maxMemoryCount);
+
+        var path = ReconstructBidirectionalPath(cameFromForward, cameFromBackward, start, bestMeeting);
+        return new SearchResult(path, iterations, maxOpenCount, finalOpenCount, maxMemoryCount);
+    }
+
+    private static List<(CubeState Node, int Total)> ExpandLayer(
+        Queue<CubeState> queue,
+        Dictionary<CubeState, int> distOwn,
+        Dictionary<CubeState, int> distOther,
+        Dictionary<CubeState, (CubeState prev, MoveDirection move)> cameFrom,
+        Field field,
+        Func<MoveDirection, MoveDirection> moveTransform,
+        int newDepth)
+    {
+        var matches = new List<(CubeState, int)>();
+        int layerSize = queue.Count; // фиксируем размер слоя ДО обработки
+
+        for (int i = 0; i < layerSize; i++)
+        {
+            var current = queue.Dequeue();
+
+            foreach (var direction in Enum.GetValues<MoveDirection>())
+            {
+                var next = current.Move(direction);
+                if (!field.IsWalkable(next.X, next.Y)) continue;
+                if (!distOwn.TryAdd(next, newDepth)) continue;
+
+                cameFrom[next] = (current, moveTransform(direction));
+                queue.Enqueue(next);
+
+                if (distOther.TryGetValue(next, out var otherDepth))
+                    matches.Add((next, newDepth + otherDepth));
             }
         }
 
-        return new SearchResult(null, iterations, maxOpenCount, queueForward.Count + queueBackward.Count,
-            maxMemoryCount);
+        return matches;
     }
 
     private static List<MoveDirection> ReconstructBidirectionalPath(
@@ -182,14 +202,14 @@ public static class CubeSolver
 
         return path;
     }
-    
+
     private static List<CubeState> GetTargetStates((int X, int Y) target)
     {
         return TargetCubeOrientations
             .Select(cube => new CubeState(target.X, target.Y, cube))
             .ToList();
     }
-    
+
     private static HashSet<Cube> GetAllCubeOrientations()
     {
         var visited = new HashSet<Cube> { Cube.Initial };
@@ -211,7 +231,7 @@ public static class CubeSolver
 
         return visited;
     }
-    
+
     private static MoveDirection Opposite(MoveDirection direction) => direction switch
     {
         MoveDirection.Up => MoveDirection.Down,
