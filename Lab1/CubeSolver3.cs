@@ -2,13 +2,12 @@
 
 public class CubeSolver3 : BaseSolver
 {
-    // h1(n)
+    
     public static int H1(CubeState state, (int X, int Y) target)
     {
         return Math.Abs(state.X - target.X) + Math.Abs(state.Y - target.Y);
     }
 
-    // h2(n)
     public static int H2(CubeState state, (int X, int Y) target)
     {
         int h1 = H1(state, target);
