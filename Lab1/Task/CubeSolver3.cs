@@ -2,7 +2,6 @@
 
 public class CubeSolver3 : BaseSolver
 {
-    
     public static int H1(CubeState state, (int X, int Y) target)
     {
         return Math.Abs(state.X - target.X) + Math.Abs(state.Y - target.Y);
@@ -27,28 +26,27 @@ public class CubeSolver3 : BaseSolver
     }
 
     public static SearchResult SolveAStar(
-        Field field, 
-        CubeState start, 
+        Field field,
+        CubeState start,
         (int X, int Y) target,
         Func<CubeState, (int X, int Y), int> heuristic)
     {
-        // g(n)
         var gCosts = new Dictionary<CubeState, int> { [start] = 0 };
         var cameFrom = new Dictionary<CubeState, (CubeState prev, MoveDirection move)>();
-
+        var closed = new HashSet<CubeState>();
         var openQueue = new PriorityQueue<CubeState, int>();
 
-        int hStart = heuristic(start, target);
-        openQueue.Enqueue(start, hStart);
+        openQueue.Enqueue(start, heuristic(start, target));
 
         int iterations = 0;
-        int maxOpenCount = openQueue.Count;
-        int maxMemoryCount = gCosts.Count;
+        int maxOpenCount = 1;
 
         while (openQueue.Count > 0)
         {
-            iterations++;
             var current = openQueue.Dequeue();
+            if (!closed.Add(current)) continue;
+
+            iterations++;
 
             if (current.X == target.X && current.Y == target.Y && current.Cube.Bottom == Face.First)
             {
@@ -56,9 +54,8 @@ public class CubeSolver3 : BaseSolver
                     ReconstructPath(cameFrom, start, current),
                     iterations,
                     maxOpenCount,
-                    openQueue.Count,
-                    maxMemoryCount
-                );
+                    gCosts.Count - closed.Count,
+                    gCosts.Count);
             }
 
             int currentG = gCosts[current];
@@ -69,26 +66,20 @@ public class CubeSolver3 : BaseSolver
                 if (!field.IsWalkable(next.X, next.Y)) continue;
 
                 int tentativeG = currentG + 1;
-
                 if (gCosts.TryGetValue(next, out int existingG) && tentativeG >= existingG)
                     continue;
 
                 gCosts[next] = tentativeG;
                 cameFrom[next] = (current, direction);
+                closed.Remove(next);
 
-                int h = heuristic(next, target);
-                int f = tentativeG + h;
+                openQueue.Enqueue(next, tentativeG + heuristic(next, target));
 
-                openQueue.Enqueue(next, f);
-
-                if (openQueue.Count > maxOpenCount)
-                    maxOpenCount = openQueue.Count;
-
-                if (gCosts.Count > maxMemoryCount)
-                    maxMemoryCount = gCosts.Count;
+                int openCount = gCosts.Count - closed.Count;
+                if (openCount > maxOpenCount) maxOpenCount = openCount;
             }
         }
 
-        return new SearchResult(null, iterations, maxOpenCount, openQueue.Count, gCosts.Count);
+        return new SearchResult(null, iterations, maxOpenCount, 0, gCosts.Count);
     }
 }

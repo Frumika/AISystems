@@ -16,8 +16,10 @@ List<Algorithm> algorithms = new List<Algorithm>
 };
 
 DistanceExperiment distanceExperiment = new(algorithms, rows, columns, wallsCount, 20, random);
-List<DistanceResult> distanceResults = distanceExperiment.Run(new[] { 2, 7, 12, 17, 22, 27, 32 });
+List<DistanceResult> distanceResults = distanceExperiment.Run(new[] { 2, 7, 12, 17, 22 });
 ConsoleHelper.PrintDistanceResults(distanceResults);
+
+
 
 
 // GeneratedPositions generatedPositions;
@@ -28,11 +30,11 @@ ConsoleHelper.PrintDistanceResults(distanceResults);
 // SearchResult resultBidirectional;
 // SearchResult resultAStar1;
 // SearchResult resultAStar2;
-
+//
 // while (true)
 // {
 //     field = Field.Create(rows, columns, wallsCount, random);
-//     generatedPositions = PositionGenerator.Generate(field, distance, random);
+//     generatedPositions = PositionGenerator.Generate(field, 27, random);
 //
 //     start = generatedPositions.Start;
 //     target = generatedPositions.Finish;
