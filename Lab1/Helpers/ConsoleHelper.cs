@@ -48,13 +48,13 @@ public static class ConsoleHelper
     }
 
 
-    public static void PrintStatistic(string methodName, SearchResult result, CubeState start)
+    public static void PrintStatistic(string methodName, SearchResult result, CubeState start, bool solution = true)
     {
         Console.WriteLine();
         Console.WriteLine($"==================== {methodName} ====================");
 
         Console.WriteLine($"Решение найдено за {result.Path!.Count} ходов:\n");
-        ConsoleHelper.PrintSolution(start, result.Path);
+        if (solution) ConsoleHelper.PrintSolution(start, result.Path);
 
         Console.WriteLine();
         Console.WriteLine($"--- Статистика поиска ({methodName}) ---");

@@ -1,4 +1,5 @@
 ﻿using Lab1;
+using Lab1.HeuristicExp;
 using Lab1.NoWayExp;
 
 
@@ -28,6 +29,37 @@ NoWayExperiment noWayExperiment = new(algorithms, 10, 10, random);
 var noWayResult = noWayExperiment.Run();
 ConsoleHelper.PrintNoWayResults(noWayResult);
 
+Console.WriteLine();
+Console.WriteLine("=====================================================================");
+Console.WriteLine("=====================================================================");
+Console.WriteLine();
+
+List<Algorithm> heuristicAlgorithms = new List<Algorithm>
+{
+    new("AStar1", (field, start, target) => CubeSolver3.SolveAStar(field, start, target, CubeSolver3.H1)),
+    new("AStar2", (field, start, target) => CubeSolver3.SolveAStar(field, start, target, CubeSolver3.H2))
+};
+
+
+Console.WriteLine("============ ЭВРИСТИКА ЭФФЕКТИВНА ===============");
+HeuristicExperiment heuristicExperiment = new(heuristicAlgorithms, 24, 34);
+var openRes = heuristicExperiment.Open();
+var trappedRes = heuristicExperiment.Trapped();
+
+ConsoleHelper.PrintBoard(openRes.Field, openRes.Start, openRes.Target);
+foreach (var (methodName, searchResult) in openRes.Results)
+{
+    ConsoleHelper.PrintStatistic(methodName, searchResult, openRes.Start, false);
+}
+
+Console.WriteLine();
+
+Console.WriteLine("========= ЭВРИСТИКА НЕЭФФЕКТИВНА =================");
+ConsoleHelper.PrintBoard(trappedRes.Field, trappedRes.Start, trappedRes.Target);
+foreach (var (methodName, searchResult) in trappedRes.Results)
+{
+    ConsoleHelper.PrintStatistic(methodName, searchResult, trappedRes.Start, false);
+}
 
 // GeneratedPositions generatedPositions;
 // Field field;
