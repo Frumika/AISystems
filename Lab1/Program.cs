@@ -1,11 +1,11 @@
 ﻿using Lab1;
+using Lab1.NoWayExp;
 
+
+Random random = new Random(12345678);
 const int rows = 24;
 const int columns = 34;
 const int wallsCount = 95;
-
-Random random = new Random(12345678);
-
 
 List<Algorithm> algorithms = new List<Algorithm>
 {
@@ -19,7 +19,14 @@ DistanceExperiment distanceExperiment = new(algorithms, rows, columns, wallsCoun
 List<DistanceResult> distanceResults = distanceExperiment.Run(new[] { 2, 7, 12, 17, 22 });
 ConsoleHelper.PrintDistanceResults(distanceResults);
 
+Console.WriteLine();
+Console.WriteLine("=====================================================================");
+Console.WriteLine("=====================================================================");
+Console.WriteLine();
 
+NoWayExperiment noWayExperiment = new(algorithms, 10, 10, random);
+var noWayResult = noWayExperiment.Run();
+ConsoleHelper.PrintNoWayResults(noWayResult);
 
 
 // GeneratedPositions generatedPositions;

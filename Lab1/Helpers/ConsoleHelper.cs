@@ -1,7 +1,22 @@
-﻿namespace Lab1;
+﻿using Lab1.NoWayExp;
+
+namespace Lab1;
 
 public static class ConsoleHelper
 {
+    public static void PrintNoWayResults(NoWayResult result)
+    {
+        Console.WriteLine("НЕВОЗМОЖНО НАЙТИ РЕШЕНИЕ");
+        PrintBoard(result.Field, result.Start, result.Target);
+
+        foreach (var (methodName, searchResult) in result.Results)
+        {
+            string displayText = searchResult.Path is null ? "Не найдено" : "Найдено";
+            Console.WriteLine($"Решением методом {methodName} -> {displayText}");
+        }
+    }
+
+
     public static void PrintDistanceResults(List<DistanceResult> results)
     {
         foreach (var result in results)
@@ -20,13 +35,14 @@ public static class ConsoleHelper
 
         foreach (var (methodName, stats) in result.ByAlgorithm)
         {
-            Console.WriteLine($"Усредненная статистика поиска ({methodName}) ---");
+            Console.WriteLine($"Усредненная статистика поиска ({methodName})");
+            Console.WriteLine($"- Решение найдено за {stats.AvgSteps} шагов");
             Console.WriteLine($"- Количество итераций алгоритма: {stats.AvgIterations}");
             Console.WriteLine($"- Узлов в списке O:");
             Console.WriteLine($"-- Максимальное за время поиска: {stats.AvgMaxOpen}");
             Console.WriteLine($"-- На момент завершения: {stats.AvgFinalOpen}");
             Console.WriteLine($"- Максимальное количество хранимых в памяти узлов (|O| + |C|): {stats.AvgMaxStored}");
-            Console.WriteLine($"- Коэффицент оптимального ветвления (b*): {stats.EffectiveBranching:F3}");
+            Console.WriteLine($"- Коэффициент оптимального ветвления (b*): {stats.EffectiveBranching:F3}");
             Console.WriteLine();
         }
     }

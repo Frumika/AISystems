@@ -65,6 +65,7 @@ public class DistanceExperiment
         double avgMaxStored = results.Average(r => r.MaxMemoryCount);
 
         return new AlgorithmStats(
+            AvgSteps: results.Average(r => r.Path!.Count),
             AvgIterations: results.Average(r => r.Iterations),
             AvgMaxOpen: results.Average(r => r.MaxOpenCount),
             AvgFinalOpen: results.Average(r => r.FinalOpenCount),
