@@ -5,6 +5,7 @@ public class Field
     public Cell[][] Cells { get; }
     public int Rows { get; }
     public int Columns { get; }
+    public (int x, int y)[] FreeCells => GetFreeCells();
 
     private Field(Cell[][] cells, int rows, int columns)
     {
@@ -21,7 +22,8 @@ public class Field
     public bool IsWalkable(int x, int y) =>
         InBounds(x, y) && Cells[y][x].Type == CellType.Free;
 
-    public static Field Create(int rows, int columns, int wallsCount)
+
+    public static Field Create(int rows, int columns, int wallsCount, Random random)
     {
         var cells = new Cell[rows][];
         for (int y = 0; y < rows; y++)
@@ -38,12 +40,20 @@ public class Field
 
         var freeCoords = Enumerable.Range(0, rows * columns)
             .Select(i => (x: i % columns, y: i / columns))
-            .OrderBy(_ => Random.Shared.Next())
+            .OrderBy(_ => random.Next())
             .Take(wallsCount);
 
         foreach (var (x, y) in freeCoords)
             cells[y][x].Type = CellType.Wall;
 
         return new Field(cells, rows, columns);
+    }
+
+    private (int x, int y)[] GetFreeCells()
+    {
+        return Enumerable.Range(0, Rows * Columns)
+            .Select(i => (x: i % Columns, y: i / Columns))
+            .Where(c => IsWalkable(c.x, c.y))
+            .ToArray();
     }
 }
