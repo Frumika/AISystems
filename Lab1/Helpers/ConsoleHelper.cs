@@ -53,10 +53,8 @@ public static class ConsoleHelper
         Console.WriteLine();
         Console.WriteLine($"==================== {methodName} ====================");
 
-        Console.WriteLine($"Решение найдено за {result.Path!.Count} ходов:\n");
-        if (solution) ConsoleHelper.PrintSolution(start, result.Path);
-
-        Console.WriteLine();
+        Console.WriteLine($"Решение найдено за {result.Path!.Count} ходов:");
+        if (solution) PrintSolution(start, result.Path);
         Console.WriteLine($"--- Статистика поиска ({methodName}) ---");
         Console.WriteLine($"1. Количество итераций алгоритма: {result.Iterations}");
         Console.WriteLine($"2. Узлов в списке O:");

@@ -6,82 +6,81 @@ public class CubeSolver2 : BaseSolver
         .Where(c => c.Bottom == Face.First)
         .ToList();
 
+    private static readonly MoveDirection[] AllDirections = Enum.GetValues<MoveDirection>();
+
+    private sealed class SearchSide
+    {
+        public Dictionary<CubeState, int> Dist { get; } = new();
+        public Dictionary<CubeState, (CubeState prev, MoveDirection move)> CameFrom { get; } = new();
+        public Queue<CubeState> Queue { get; } = new();
+
+        public void AddRoot(CubeState state)
+        {
+            if (Dist.TryAdd(state, 0))
+                Queue.Enqueue(state);
+        }
+    }
+
     public static SearchResult SolveBidirectional(Field field, CubeState start, (int X, int Y) target)
     {
-        var distForward = new Dictionary<CubeState, int> { [start] = 0 };
-        var cameFromForward = new Dictionary<CubeState, (CubeState prev, MoveDirection move)>();
-        var queueForward = new Queue<CubeState>();
-        queueForward.Enqueue(start);
+        var forward = new SearchSide();
+        var backward = new SearchSide();
 
-        var distBackward = new Dictionary<CubeState, int>();
-        var cameFromBackward = new Dictionary<CubeState, (CubeState prev, MoveDirection move)>();
-        var queueBackward = new Queue<CubeState>();
-
+        forward.AddRoot(start);
         foreach (var targetState in GetTargetStates(target))
+            backward.AddRoot(targetState);
+
+        int iterations = 0;
+        int maxOpenCount = forward.Queue.Count + backward.Queue.Count;
+        int maxMemoryCount = forward.Dist.Count + backward.Dist.Count;
+
+        CubeState? meeting = backward.Dist.ContainsKey(start) ? start : null;
+
+        while (meeting is null && forward.Queue.Count > 0 && backward.Queue.Count > 0)
         {
-            if (distBackward.TryAdd(targetState, 0))
-                queueBackward.Enqueue(targetState);
-        }
+            bool forwardTurn = forward.Queue.Count <= backward.Queue.Count;
+            var own = forwardTurn ? forward : backward;
+            var other = forwardTurn ? backward : forward;
 
-        int totalProcessedNodes = 0;
-        int maxOpenCount = queueForward.Count + queueBackward.Count;
-        int maxMemoryCount = distForward.Count + distBackward.Count;
+            int layerSize = own.Queue.Count;
 
-        int forwardDepth = 0;
-        int backwardDepth = 0;
-
-        bool found = false;
-        int bestTotal = 0;
-        CubeState bestMeeting = default;
-
-        while (queueForward.Count > 0 && queueBackward.Count > 0)
-        {
-            if (found) break;
-            
-            List<(CubeState Node, int Total)> matches;
-            int processedInThisLayer = 0;
-
-            if (forwardDepth <= backwardDepth)
+            for (int i = 0; i < layerSize && meeting is null; i++)
             {
-                forwardDepth++;
-                processedInThisLayer = queueForward.Count;
-                matches = ExpandLayer(queueForward, distForward, distBackward, cameFromForward, field,
-                    direction => direction, forwardDepth);
-            }
-            else
-            {
-                backwardDepth++;
-                processedInThisLayer = queueBackward.Count;
-                matches = ExpandLayer(queueBackward, distBackward, distForward, cameFromBackward, field, Opposite,
-                    backwardDepth);
-            }
-            
-            totalProcessedNodes += processedInThisLayer;
+                var current = own.Queue.Dequeue();
+                iterations++;
 
-            foreach (var (node, total) in matches)
-            {
-                if (!found || total < bestTotal)
+                foreach (var direction in AllDirections)
                 {
-                    found = true;
-                    bestTotal = total;
-                    bestMeeting = node;
+                    var next = current.Move(direction);
+                    if (!field.IsWalkable(next.X, next.Y) || own.Dist.ContainsKey(next))
+                        continue;
+
+                    own.Dist[next] = own.Dist[current] + 1;
+                    own.CameFrom[next] = (current, forwardTurn ? direction : Opposite(direction));
+                    own.Queue.Enqueue(next);
+
+                    if (other.Dist.ContainsKey(next))
+                    {
+                        meeting = next;
+                        break;
+                    }
                 }
+
+                int open = forward.Queue.Count + backward.Queue.Count;
+                if (open > maxOpenCount) maxOpenCount = open;
+
+                int memory = forward.Dist.Count + backward.Dist.Count;
+                if (memory > maxMemoryCount) maxMemoryCount = memory;
             }
-
-            int currentMem = distForward.Count + distBackward.Count;
-            if (currentMem > maxMemoryCount) maxMemoryCount = currentMem;
-
-            int currentOpen = queueForward.Count + queueBackward.Count;
-            if (currentOpen > maxOpenCount) maxOpenCount = currentOpen;
         }
 
-        int finalOpenCount = queueForward.Count + queueBackward.Count;
+        int finalOpenCount = forward.Queue.Count + backward.Queue.Count;
 
-        if (!found)
-            return new SearchResult(null, totalProcessedNodes, maxOpenCount, finalOpenCount, maxMemoryCount);
+        if (meeting is null)
+            return new SearchResult(null, iterations, maxOpenCount, finalOpenCount, maxMemoryCount);
 
-        var path = ReconstructBidirectionalPath(cameFromForward, cameFromBackward, start, bestMeeting);
-        return new SearchResult(path, totalProcessedNodes, maxOpenCount, finalOpenCount, maxMemoryCount);
+        var path = ReconstructBidirectionalPath(forward.CameFrom, backward.CameFrom, start, meeting.Value);
+        return new SearchResult(path, iterations, maxOpenCount, finalOpenCount, maxMemoryCount);
     }
 
     private static List<(CubeState Node, int Total)> ExpandLayer(
